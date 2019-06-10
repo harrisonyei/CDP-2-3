@@ -32,6 +32,7 @@ struct idValue{
 
 /* store constant or variable or function information */
 struct idInfo{
+	int index;
 	string name;	// id name
 	int type;		// enum type
 	idValue value;	// value depend on type
@@ -44,14 +45,15 @@ class SymbolTable{
 private:
 	map<string,idInfo> symbol_i;		// use variable name get ifInfo
 	int length;
+	int index;
 public:
-	SymbolTable();
+	SymbolTable(string _scopeName,int _index);
 	bool isExist(string);				// check variable in the SymbolTable
 	idInfo* lookup(string);				// return Copied idInfo if variable in the SymbolTable (else return NULL)
 	idInfo* getIdInfoPtr(string);		// return idInfo pointer if variable in the SymbolTable (else return NULL)
 	int insert(string var_name, int type, idValue value, int flag);		// insert var into the SymbolTable
 	int dump();							// dump the SymbolTable
-	int remove(string var_name);					   // remove from SymbolTable
+	string scopeName;
 };
 
 /* 	symbol table list
@@ -65,9 +67,12 @@ private:
 	vector<string> waitTypeIDs;
 public:
 	SymbolTableList();
-	void pushTable();				// push a SymbolTable into list
+	void pushTable(string scopeName);    // push a SymbolTable into list
 	bool popTable();				// pop a SymbolTable from list
 	idInfo* lookup(string);			// lookup all SymbolTable from list (from top to 0)
+	string getScopeName(string);    // lookup all SymbolTable from list (from top to 0)
+	bool isGlobal(string);
+	bool isGlobal();
 	
 	/* insert a variable into the SymbolTable(current scope) */
 	int insertNoInit(string var_name, int type);
@@ -78,10 +83,7 @@ public:
 	int assignWaitTypeArray(int type,int size); // add type to all identifier arrays
 	int pushWaitTypeFunc(string var_name);		// initilize function without type
 	int assignWaitTypeFunc(int type);  // late assign type to function
-	bool setFuncParam(string,int);	// set function parameters
-	int pushFuncEnd(string); // push function end_name to table, for checking fuctions "END" has same name as declare
-	int checkFuncEnd(string); // check function end name and erase end_name from table
-
+	bool setFuncParam(string);	// set function parameters
 	int dump();						// dump all SymbolTable (from top to 0)
 };
 

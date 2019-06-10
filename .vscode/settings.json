@@ -1,0 +1,20 @@
+{
+    "files.associations": {
+        "*.y": "cpp",
+        "xstring": "cpp",
+        "stack": "cpp",
+        "xiosbase": "cpp",
+        "fstream": "cpp",
+        "xtr1common": "cpp",
+        "vector": "cpp",
+        "deque": "cpp",
+        "map": "cpp",
+        "xtree": "cpp",
+        "memory": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "utility": "cpp",
+        "xmemory0": "cpp",
+        "xutility": "cpp"
+    }
+}

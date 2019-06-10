@@ -1,5 +1,4 @@
-#include "symbols.hpp"
-
+#include "GenJavaASM.h"
 
 // struct constructor
 idValue::idValue(){
@@ -9,6 +8,7 @@ idValue::idValue(){
 	sval = "";
 }
 idInfo::idInfo(){
+	index = 0;
 	type = Int_type;
 	flag = Var_flag;
 }
@@ -16,8 +16,10 @@ idInfo::idInfo(){
 /*
  *	SymbolTable
  */
-SymbolTable::SymbolTable(){
+SymbolTable::SymbolTable(string _scopeName,int _index){
 	length = 0;
+	index = _index;
+	scopeName = _scopeName;
 }
 
 bool SymbolTable::isExist(string s){
@@ -48,22 +50,14 @@ int SymbolTable::insert(string var_name, int type, idValue value, int flag){
 	if(symbol_i.find(var_name) != symbol_i.end()){
 		return -1;		// find it in SymbolTable
 	}
+	symbol_i[var_name].index = length;
 	symbol_i[var_name].name = var_name;
 	symbol_i[var_name].type = type;
 	symbol_i[var_name].value = value;
 	symbol_i[var_name].flag = flag;
+
 	length += 1;
 	return length - 1;
-}
-
-int SymbolTable::remove(string var_name){
-	std::map<std::string,idInfo>::iterator it = symbol_i.find(var_name);
-	if(it != symbol_i.end()){
-		symbol_i.erase(it);
-		length -= 1;
-		return 0;
-	}
-	return -1;
 }
 
 /* dump */
@@ -82,12 +76,14 @@ int SymbolTable::dump(){
 SymbolTableList::SymbolTableList(){
 	top = -1;
 	waitTypeIDs.clear();
-	pushTable();
 }
 
 // push SymbolTable into SymbolTableList
-void SymbolTableList::pushTable(){
-	list.push_back(SymbolTable());
+void SymbolTableList::pushTable(string scopeName){
+	if(top > 0){
+		scopeName = list[top].scopeName + "." + scopeName;
+	}
+	list.push_back(SymbolTable(scopeName,top));
 	top++;
 }
 
@@ -112,20 +108,34 @@ idInfo* SymbolTableList::lookup(string s){
 	return NULL;		// not found
 }
 
+string SymbolTableList::getScopeName(string s){
+	for(int i = top;i >= 0; i--){
+		if(list[i].isExist(s)){
+			return list[i].scopeName;
+		}
+	}
+	return "";		// not found
+}
+
+bool SymbolTableList::isGlobal(string s){
+	for(int i = top;i >= 0; i--){
+		if(list[i].isExist(s)){
+			return (i == 0);
+		}
+	}
+	return false;
+}
+
+bool SymbolTableList::isGlobal(){
+	return (top <= 0);
+}
+
 
 /* INSERT */
 int SymbolTableList::insertNoInit(string var_name, int type){
-	return list[top].insert(var_name,type,idValue(), Var_flag);
-}
 
-int SymbolTableList::pushFuncEnd(string func_name){
-	string func_end_name = "$end$"+func_name;
-	return list[top].insert(func_end_name,Str_type,idValue(), ConstVal_flag);
-}
-
-int SymbolTableList::checkFuncEnd(string func_name){
-	string func_end_name = "$end$"+func_name;
-	return list[top].remove(func_end_name);
+	int idx = list[top].insert(var_name,type, idValue(), Var_flag);
+	return idx;
 }
 
 int SymbolTableList::pushWaitType(string var_name){
@@ -139,6 +149,14 @@ int SymbolTableList::assignWaitType(int type){
 	for(int i = 0;i < waitTypeIDs.size();i++){
 		if(insertNoInit(waitTypeIDs[i],type) == -1){
 			return -1;
+		}
+
+		idInfo* tmp = lookup(waitTypeIDs[i]);
+		if(tmp->flag == Var_flag)
+		{
+			if(top == 0){
+				GenDefGlobalVar(tmp->name, type);
+			}
 		}
 	}
 	waitTypeIDs.clear();
@@ -188,15 +206,12 @@ int SymbolTableList::insert(string var_name, idInfo idinfo){
 }
 
 // set function parameters
-bool SymbolTableList::setFuncParam(string name,int type){
+bool SymbolTableList::setFuncParam(string name){
 	idInfo *f = list[top-1].getIdInfoPtr(funcname);
 	if(f == NULL) 
 		return false;
-	idInfo tmp;
-	tmp.name = name;
-	tmp.type = type;
-	tmp.flag = Var_flag;
-	f->value.aval.push_back(tmp);
+	idInfo* tmp = list[top].getIdInfoPtr(name);
+	f->value.aval.push_back(*tmp);
 	return true;
 }
 

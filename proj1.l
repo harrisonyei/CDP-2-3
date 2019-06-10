@@ -22,7 +22,7 @@ char g_buf[MAX_LINE_LENG];
 
 %}
 
-DELIMITERS     [,:\.;(\)[\]\{\}]
+DELIMITERS     [,:\.;(\)\[\]\{\}]
 ARITHMETIC     [\*\-\+\/\%]
 
 ASSIGNMENT     (:=)
@@ -168,7 +168,7 @@ END_COMMENT    \*\)
                           BEGIN INITIAL;
                         }
 
-\n                      {
+\r?\n                   {
                           LIST;
                           printf("%d: %s", g_linenum, g_buf);
                           g_linenum++;
